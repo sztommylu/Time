@@ -90,6 +90,8 @@ class StockDataProcessor:
             str: 趋势信号字符串
         """
         try:
+            print(history_df)
+
             if history_df is None or history_df.empty:
                 return "无数据"
             
@@ -98,7 +100,7 @@ class StockDataProcessor:
             
             if df_with_boll.empty:
                 return "数据不足"
-            
+
             # 获取最新数据
             latest_row = df_with_boll.iloc[-1]
             

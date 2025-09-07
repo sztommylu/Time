@@ -10,7 +10,6 @@ import traceback
 from datetime import datetime
 from config import TUSHARE_TOKEN
 
-
 class StockDataFetcher:
     """股票数据获取器"""
     
@@ -79,10 +78,12 @@ class StockDataFetcher:
                 end_date=end_date
             )
             
-            if history_df.empty:
-                print(f"未获取到{new_stock_code}数据")
-                return None
-            
+            if history_df is None or history_df.empty:
+                return pd.DataFrame()
+
+            history_df = history_df[["trade_date", "open", "high", "low", "close", "pct_chg"]].sort_values("trade_date")
+            history_df["date"] = pd.to_datetime(history_df["trade_date"])
+
             print(f"成功获取 {new_stock_code} 从 {start_date} 到 {end_date} 的历史数据")
             return history_df
             

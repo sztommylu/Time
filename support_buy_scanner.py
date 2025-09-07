@@ -84,16 +84,16 @@ def pct_near(a: float, b: float, tol: float, num: int) -> bool:
     diff_ratio = abs(a - b) / abs(b)
 
     if num == 1:
-        title = "收盘价接近中轨"
+        title = "收盘价接近中轨" #close, ma20, tol
 
     elif num == 2:
-        title = "收盘价接近下轨"
+        title = "收盘价接近下轨" #close, lower, tol
 
     elif num == 3:
-        title = "下引线接近中轨"
+        title = "下引线接近中轨" #low, ma20, tol
 
     elif num == 4:
-        title = "下引线接近下轨"
+        title = "下引线接近下轨" #low, lower, tol
 
     print(f"{title}: a={a:.2f}, b={b:.2f}, 差距={diff_ratio*100:.2f}%, 容差={tol*100:.2f}%")
     
@@ -107,18 +107,27 @@ def boll_touch_signal(close: float, low: float, ma20: float, lower: float, tol: 
       如果都不满足，返回“未接近中轨或下轨”
     """
     msgs = []
-    # 收盘价接近
 
+    # 收盘价接近
     if pct_near(close, ma20, tol, 1):
         msgs.append("收盘价接近中轨")
     if pct_near(close, lower, tol, 2):
         msgs.append("收盘价接近下轨")
+
     # 下引线（最低价）接近
     if pct_near(low, ma20, tol, 3):
         msgs.append("下引线接近中轨")
     if pct_near(low, lower, tol, 4):
         msgs.append("下引线接近下轨")
-    return "，".join(msgs) if msgs else "未接近中轨或下轨"
+
+    if msgs:
+        print(f"--------------->> {",".join(msgs)}")
+        result = "BUY"
+    else:
+        print("--------------->> 未接近中轨或下轨")
+        result = ""
+
+    return result
 
 # def main():
 #     pro = get_token()
