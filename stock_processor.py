@@ -13,7 +13,7 @@ from technical_analysis import TechnicalAnalyzer
 from excel_handler import ExcelHandler
 from config import API_LIMIT_COUNT, API_SLEEP_TIME
 import support_buy_scanner
-
+import check_ma_converge
 
 class StockDataProcessor:
     """股票数据处理器 - 整合所有功能的主处理类"""
@@ -89,9 +89,10 @@ class StockDataProcessor:
         Returns:
             str: 趋势信号字符串
         """
-        try:
-            print(history_df)
 
+        print(history_df)
+
+        try:
             if history_df is None or history_df.empty:
                 return "无数据"
             
@@ -128,7 +129,16 @@ class StockDataProcessor:
             target_sheet_name: 目标工作表名称
         """
         self.excel_handler.append_data_to_sheet(data, target_sheet_name)
-    
+
+
+    def get_recent_sum(self, df, days):
+        if len(df) >= days:
+            return round(df["pct_chg"].tail(days).sum(), 2)
+        elif len(df) > 0:
+            return round(df["pct_chg"].sum(), 2)
+        else:
+            return np.nan
+
     def process_stock_data(self, current_sheet_name, target_sheet_name):
         """
         处理股票数据的主要流程
@@ -171,54 +181,52 @@ class StockDataProcessor:
                 print(f"处理股票: {stock_code} - {stock_name} ({stock_plate})")
                 
                 # 获取股票历史数据
-                history_df = self.get_stock_history(stock_code, start_date, current_date)
-                
+                try:
+                    history_df = self.get_stock_history(stock_code, start_date, current_date)
+                except Exception as e:
+                    print(e)
+                    continue
+
+                if len(history_df) < 20:
+                    print(f"{stock_name} {stock_code} 不足20个数据")
+                    continue
+
                 # 添加股票基本信息（即使没有历史数据也要添加）
                 merged_data["代码"].append(stock_code)
                 merged_data["名称"].append(stock_name)
                 merged_data["板块"].append(stock_plate)
                 
-                # 初始化默认值
-                five_pct_sum = np.nan
-                ten_pct_sum = np.nan
-                twenty_pct_sum = np.nan
-                trend = ""
+                # 调用 support_buy_scanner 计算趋势
+                trend = self._calculate_trend_signal(history_df)
+                # 计算均线粘合
+                is_ma_converge = check_ma_converge.check_ma_converge(history_df)
+                if is_ma_converge:
+                    converge = "均线粘合"
+                else:
+                    converge = ""
+
+                history_df = history_df.sort_values('trade_date', ascending=False)
+
+                # 计算各项指标
+                five_pct_sum = round(history_df["pct_chg"].head(5).sum(), 2)
+                ten_pct_sum = round(history_df["pct_chg"].head(10).sum(), 2)
+                twenty_pct_sum = round(history_df["pct_chg"].head(20).sum(), 2)
                 
-                if history_df is not None:
-                    # 计算各项指标
-                    five_pct_sum = round(history_df["pct_chg"].head(5).sum(), 2)
-                    ten_pct_sum = round(history_df["pct_chg"].head(10).sum(), 2)
-                    twenty_pct_sum = round(history_df["pct_chg"].head(20).sum(), 2)
-                    
-                    # 调用 support_buy_scanner 计算趋势
-                    trend = self._calculate_trend_signal(history_df)
-                    
-                    print(f"计算指标 - 5天: {five_pct_sum}, 10天: {ten_pct_sum}, 20天: {twenty_pct_sum}, 趋势: {trend}")
+                print(f"计算指标 - 5天: {five_pct_sum}, 10天: {ten_pct_sum}, 20天: {twenty_pct_sum}, 趋势: {trend}")
                 
                 # 添加指标数据
                 merged_data["5天求和"].append(five_pct_sum)
                 merged_data["10天求和"].append(ten_pct_sum)
                 merged_data["20天求和"].append(twenty_pct_sum)
                 merged_data["trend"].append(trend)
+                merged_data["均线粘合"].append(converge)
                 
                 # 添加历史数据（确保所有股票都有相同数量的日期列）
-                if history_df is not None:
-                    for _, record in history_df.head(20).iterrows():
-                        date = record["trade_date"]
-                        pct_change = round(record["pct_chg"], 2)
-                        merged_data[date].append(pct_change)
-                else:
-                    # 如果没有历史数据，为每个已存在的日期列添加NaN
-                    for col_name in merged_data.keys():
-                        if col_name not in ["代码", "名称", "板块", "5天求和", "10天求和", "20天求和", "trend"]:
-                            merged_data[col_name].append(np.nan)
-                
-                # 确保所有列长度一致
-                max_len = max(len(v) for v in merged_data.values())
-                for key in merged_data:
-                    if len(merged_data[key]) < max_len:
-                        merged_data[key].extend([np.nan] * (max_len - len(merged_data[key])))
-            
+                for _, record in history_df.head(20).iterrows():
+                    date = record["trade_date"]
+                    pct_change = round(record["pct_chg"], 2)
+                    merged_data[date].append(pct_change)
+
             # 将处理结果写入目标工作表
             if merged_data:
                 import pandas as pd

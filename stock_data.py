@@ -55,32 +55,33 @@ class StockDataFetcher:
         """
         print(f"获取股票历史数据 {stock_code} {start_date} {end_date}")
         
-        try:
-            # 解析股票代码
-            items = str(stock_code).split('.')
-            code = items[1]
-            
-            # 确定交易所
-            exchange = ""
-            if code.startswith('6'):
-                exchange = 'SH'
-            elif code.startswith('0') or code.startswith('3'):
-                exchange = 'SZ'
-            elif code.startswith('88'):
-                exchange = 'BJ'
-            
-            new_stock_code = f"{code}.{exchange}"
-            
-            # 获取历史数据
-            history_df = self.pro.daily(
-                ts_code=new_stock_code, 
-                start_date=start_date, 
-                end_date=end_date
-            )
-            
-            if history_df is None or history_df.empty:
-                return pd.DataFrame()
 
+            # 解析股票代码
+        items = str(stock_code).split('.')
+        code = items[1]
+        
+        # 确定交易所
+        exchange = ""
+        if code.startswith('6'):
+            exchange = 'SH'
+        elif code.startswith('0') or code.startswith('3'):
+            exchange = 'SZ'
+        elif code.startswith('88'):
+            exchange = 'BJ'
+        
+        new_stock_code = f"{code}.{exchange}"
+        
+        # 获取历史数据
+        history_df = self.pro.daily(
+            ts_code=new_stock_code, 
+            start_date=start_date, 
+            end_date=end_date
+        )
+        
+        if history_df is None or history_df.empty:
+            raise Exception((f"{code} 出现异常: {str(e)}"))
+
+        try:
             history_df = history_df[["trade_date", "open", "high", "low", "close", "pct_chg"]].sort_values("trade_date")
             history_df["date"] = pd.to_datetime(history_df["trade_date"])
 
@@ -89,9 +90,8 @@ class StockDataFetcher:
             
         except Exception as e:
             traceback.print_exc()
-            print(f"获取股票历史数据错误 {stock_code}: {e}")
-            return None
-    
+            raise Exception(f"获取股票历史数据错误 {stock_code}: {e}")
+
     def parse_stock_code(self, stock_code):
         """
         解析股票代码，确定交易所

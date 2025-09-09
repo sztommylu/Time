@@ -20,7 +20,7 @@ def main():
     print("开始处理股票数据...")
     
     # 执行主要处理流程
-    processor.process_stock_data(current_sheet_name="test", target_sheet_name="watch")
+    processor.process_stock_data(current_sheet_name="pool", target_sheet_name="watch")
     
     print("开始格式化工作表...")
     
@@ -31,7 +31,6 @@ def main():
     
     # 可选：执行测试功能
     # processor.test_filter_data()
-
 
 if __name__ == "__main__":
     main()
