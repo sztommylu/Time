@@ -204,6 +204,9 @@ class StockDataProcessor:
                 merged_data["20天求和"].append(twenty_pct_sum)
                 merged_data["trend"].append(trend)
                 merged_data["均线粘合"].append(converge)
+
+                latest_close = round(history_df.iloc[0]["close"], 2)
+                merged_data["close"].append(latest_close)
                 
                 # 获取history_df的前20个数据
                 for _, record in history_df.head(20).iterrows():

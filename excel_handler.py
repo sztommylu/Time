@@ -76,7 +76,10 @@ class ExcelHandler:
             ws = wb[sheet_name]
             
             for row in ws.iter_rows():
-                for cell in row:        
+                for cell in row:
+                    # 如果是I列则跳过
+                    if cell.column_letter == 'I':
+                        continue
                     # 检查单元格的值是否为数字
                     if isinstance(cell.value, (int, float)):
                         value = cell.value
