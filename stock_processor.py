@@ -7,9 +7,7 @@ import time
 import numpy as np
 import traceback
 from collections import defaultdict
-
 from stock_data import StockDataFetcher
-from technical_analysis import TechnicalAnalyzer
 from excel_handler import ExcelHandler
 from config import API_LIMIT_COUNT, API_SLEEP_TIME
 import support_buy_scanner
@@ -27,7 +25,7 @@ class StockDataProcessor:
         """
         self.file_path = file_path
         self.data_fetcher = StockDataFetcher()
-        self.technical_analyzer = TechnicalAnalyzer()
+        #self.technical_analyzer = TechnicalAnalyzer()
         self.excel_handler = ExcelHandler(file_path)
     
     def read_data_from_sheet(self, sheet_name):
@@ -64,20 +62,6 @@ class StockDataProcessor:
             DataFrame: 股票历史数据
         """
         return self.data_fetcher.get_stock_history(stock_code, start_date, current_date)
-    
-    def analyze_trend(self, df, window=20, bandwidth_thresh=0.1):
-        """
-        分析股票趋势
-        
-        Args:
-            df: 股票历史数据
-            window: 分析窗口期
-            bandwidth_thresh: 带宽阈值
-            
-        Returns:
-            dict: 趋势分析结果
-        """
-        return self.technical_analyzer.analyze_trend(df, window, bandwidth_thresh)
     
     def _calculate_trend_signal(self, history_df):
         """
@@ -221,16 +205,22 @@ class StockDataProcessor:
                 merged_data["trend"].append(trend)
                 merged_data["均线粘合"].append(converge)
                 
-                # 添加历史数据（确保所有股票都有相同数量的日期列）
+                # 获取history_df的前20个数据
                 for _, record in history_df.head(20).iterrows():
                     date = record["trade_date"]
                     pct_change = round(record["pct_chg"], 2)
                     merged_data[date].append(pct_change)
 
+                max_len = max(len(v) for v in merged_data.values())
+                for key in merged_data:
+                    if len(merged_data[key]) < max_len:
+                        merged_data[key].extend([np.nan] * (max_len - len(merged_data[key])))
+
             # 将处理结果写入目标工作表
             if merged_data:
                 import pandas as pd
                 result_df = pd.DataFrame(merged_data)
+
                 self.append_data_to_sheet(result_df, target_sheet_name)
                 print(f"数据处理完成，共处理 {len(source_data)} 只股票")
             else:

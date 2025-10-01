@@ -25,22 +25,23 @@ class StockDataFetcher:
         """
         print("获取股票交易日期")
         
-        try:
-            trade_df = ak.tool_trade_date_hist_sina()
-            # 确保日期列是字符串格式
-            trade_dates = pd.to_datetime(trade_df['trade_date']).dt.strftime('%Y%m%d').tolist()
-            current_date = datetime.now().strftime('%Y%m%d')
-            
-            latest_date = max(d for d in trade_dates if d <= current_date)
-            idx = trade_dates.index(latest_date)
-            start_date = trade_dates[max(0, idx-99)]
-            return start_date, latest_date
-            
-        except Exception as e:
-            print(f"获取交易日错误: {e}")
-            # 默认返回最近100天的日期范围
-            return "20230101", "20231231"
-    
+        trade_df = ak.tool_trade_date_hist_sina()
+
+        print(trade_df)
+
+        # 确保日期列是字符串格式
+        trade_dates = pd.to_datetime(trade_df['trade_date']).dt.strftime('%Y%m%d').tolist()
+        current_date = datetime.now().strftime('%Y%m%d')
+        
+        latest_date = max(d for d in trade_dates if d <= current_date)
+        idx = trade_dates.index(latest_date)
+        start_date = trade_dates[max(0, idx-99)]
+
+        print(start_date)
+        print(latest_date)
+
+        return start_date, latest_date
+
     def get_stock_history(self, stock_code, start_date, end_date):
         """
         获取股票历史数据

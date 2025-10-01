@@ -7,7 +7,6 @@ import os
 from stock_processor import StockDataProcessor
 from config import DEFAULT_EXCEL_FILE
 
-
 def main():
     """主函数：执行股票数据处理流程"""
     # 设置Excel文件路径
