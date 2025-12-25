@@ -32,7 +32,7 @@ class StockNotification:
                 
                 if name in support_data:
                     support = support_data[name]
-                    change_percent = ((close - support) / support) * 100
+                    change_percent = ((close - support) / support) * 100  # 计算价格变化百分比，负值表示下跌，正值表示上涨
                     
                     if support > close:
                         stock_notices.append(f"{name}下跌了{abs(change_percent):.2f}%")

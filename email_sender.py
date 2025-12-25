@@ -67,11 +67,11 @@ class EmailSender:
             if "上涨" in notice:
                 name = notice.split("上涨了")[0]
                 change = float(notice.split("上涨了")[1].replace("%", ""))
-                color = "#4CAF50"  # 绿色
+                color =  "#F44336"
             else:
                 name = notice.split("下跌了")[0]
                 change = float(notice.split("下跌了")[1].replace("%", ""))
-                color = "#F44336"  # 红色
+                color =  "#4CAF50"
             
             stock_items.append(
                 f"<div class='stock-item'>"

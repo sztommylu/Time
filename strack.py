@@ -67,12 +67,12 @@ def main():
         logger.info("开始处理股票数据...")
         
         # # 执行主要处理流程
-        # processor.process_stock_data(current_sheet_name="pool", target_sheet_name="watch")
+        processor.process_stock_data(current_sheet_name="pool", target_sheet_name="watch")
         
         logger.info("开始格式化工作表...")
         
         # # 格式化工作表
-        # processor.format_worksheet(sheet_name="watch")
+        processor.format_worksheet(sheet_name="watch")
         
         logger.info("股票数据处理完成！")
         
