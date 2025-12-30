@@ -122,7 +122,7 @@ def boll_touch_signal(close: float, low: float, ma20: float, lower: float, tol: 
 
     if msgs:
         print(f"--------------->> {",".join(msgs)}")
-        result = "BUY"
+        result = ",".join(msgs)
     else:
         print("--------------->> 未接近中轨或下轨")
         result = ""

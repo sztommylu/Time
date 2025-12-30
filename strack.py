@@ -53,6 +53,9 @@ logger.info('初始化strack应用')
 
 def main():
     try:
+        current_sheet_name = "pool"
+        target_sheet_name = "watch"
+
         logger.info('开始执行主函数')
         excel_file_name = DEFAULT_EXCEL_FILE
         logger.debug(f'使用Excel文件: {excel_file_name}')
@@ -67,31 +70,33 @@ def main():
         logger.info("开始处理股票数据...")
         
         # # 执行主要处理流程
-        processor.process_stock_data(current_sheet_name="pool", target_sheet_name="watch")
+        processor.process_stock_data(current_sheet_name=current_sheet_name, target_sheet_name=target_sheet_name)
         
         logger.info("开始格式化工作表...")
         
         # # 格式化工作表
-        processor.format_worksheet(sheet_name="watch")
+        processor.format_worksheet(sheet_name=target_sheet_name)
+        
+        logger.info("开始高亮核心股票...")
+        
+        # 高亮核心股票（将pool工作表中核心列等于1的股票在watch工作表中设为红色）
+        processor.excel_handler.highlight_core_stocks(current_sheet_name, target_sheet_name)
         
         logger.info("股票数据处理完成！")
-        
-        # 可选：执行测试功能
-        # processor.test_filter_data()
 
-        logger.info("开始获取股票通知数据...")
-        notifier = StockNotification(processor.excel_handler)
-        stock_notices, focus_names = notifier.get_data()
+        # logger.info("开始获取股票通知数据...")
+        # notifier = StockNotification(processor.excel_handler)
+        # stock_notices, focus_names = notifier.get_data()
         
-        logger.info("开始发送股票通知邮件...")
-        email_sender = EmailSender()
-        email_sender.send_email(
-            to_email="llongroad@hotmail.com",
-            subject="股票支撑位百分比",
-            content=email_sender.generate_stock_html(stock_notices, focus_names),
-            is_html=True
-        )
-        logger.info('strack执行完成')
+        # logger.info("开始发送股票通知邮件...")
+        # email_sender = EmailSender()
+        # email_sender.send_email(
+        #     to_email="llongroad@hotmail.com",
+        #     subject="股票支撑位百分比",
+        #     content=email_sender.generate_stock_html(stock_notices, focus_names),
+        #     is_html=True
+        # )
+        # logger.info('strack执行完成')
     except Exception as e:
         logger.error(f'执行出错: {e}', exc_info=True)
         raise

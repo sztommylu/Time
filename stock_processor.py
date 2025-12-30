@@ -183,11 +183,7 @@ class StockDataProcessor:
                 # 调用 support_buy_scanner 计算趋势
                 trend = self._calculate_trend_signal(history_df)
                 # 计算均线粘合
-                is_ma_converge = check_ma_converge.check_ma_converge(history_df)
-                if is_ma_converge:
-                    converge = "均线粘合"
-                else:
-                    converge = ""
+                ma_status = check_ma_converge.check_ma_converge(history_df)
 
                 history_df = history_df.sort_values('trade_date', ascending=False)
 
@@ -202,13 +198,12 @@ class StockDataProcessor:
                 merged_data["5天求和"].append(five_pct_sum)
                 merged_data["10天求和"].append(ten_pct_sum)
                 merged_data["20天求和"].append(twenty_pct_sum)
-                merged_data["trend"].append(trend)
-                merged_data["均线粘合"].append(converge)
+                merged_data["BOLL"].append(trend)
+                merged_data["均线状态"].append(ma_status)
 
                 latest_close = round(history_df.iloc[0]["close"], 2)
                 merged_data["close"].append(latest_close)
                 
-                # 获取history_df的前20个数据
                 for _, record in history_df.head(20).iterrows():
                     date = record["trade_date"]
                     pct_change = round(record["pct_chg"], 2)
@@ -219,7 +214,6 @@ class StockDataProcessor:
                     if len(merged_data[key]) < max_len:
                         merged_data[key].extend([np.nan] * (max_len - len(merged_data[key])))
 
-            # 将处理结果写入目标工作表
             if merged_data:
                 import pandas as pd
                 result_df = pd.DataFrame(merged_data)

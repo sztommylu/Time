@@ -222,3 +222,66 @@ class ExcelHandler:
         except Exception as e:
             print(f"读取过滤数据错误: {e}")
             return []
+
+    def highlight_core_stocks(self, source_sheet_name, target_sheet_name):
+        """
+        将源工作表中核心列等于1的股票名称在目标工作表中设为红色
+        
+        Args:
+            source_sheet_name: 源工作表名称（包含核心列）
+            target_sheet_name: 目标工作表名称（watch工作表）
+        """
+        try:
+            # 读取源工作表数据
+            source_df = self.read_data_from_sheet(source_sheet_name)
+            if source_df is None:
+                print(f"无法读取源工作表: {source_sheet_name}")
+                return
+            
+            # 检查是否有核心列
+            if '核心' not in source_df.columns:
+                print(f"源工作表 {source_sheet_name} 中未找到'核心'列")
+                return
+            
+            # 获取核心列等于1的股票名称
+            core_stocks = source_df[source_df['核心'] == 1]['名称'].tolist()
+            
+            if not core_stocks:
+                print(f"源工作表 {source_sheet_name} 中没有核心列等于1的股票")
+                return
+            
+            print(f"找到核心股票: {core_stocks}")
+            
+            # 打开Excel文件
+            wb = load_workbook(self.file_path)
+            ws = wb[target_sheet_name]
+            
+            # 获取名称列的索引
+            header_row = list(ws.iter_rows(max_row=1))[0]
+            name_col_index = None
+            for idx, cell in enumerate(header_row):
+                if cell.value == '名称':
+                    name_col_index = idx
+                    break
+            
+            if name_col_index is None:
+                print(f"目标工作表 {target_sheet_name} 中未找到'名称'列")
+                wb.close()
+                return
+            
+            # 遍历目标工作表的名称列，将核心股票设为红色
+            red_font = Font(color="FF0000", bold=True)  # 红色加粗字体
+            
+            for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
+                name_cell = row[name_col_index]
+                if name_cell.value in core_stocks:
+                    name_cell.font = red_font
+                    print(f"已将股票 {name_cell.value} 设为红色")
+            
+            # 保存文件
+            wb.save(self.file_path)
+            wb.close()
+            print(f"核心股票高亮完成，共处理 {len(core_stocks)} 只股票")
+            
+        except Exception as e:
+            print(f"高亮核心股票错误: {e}")
