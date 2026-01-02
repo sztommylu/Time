@@ -129,9 +129,6 @@ dmypy.json
 .pyre/
 
 # Excel files (data files)
-*.xlsx
-*.xls
-*.xlsm
 
 # IDE files
 .vscode/

@@ -13,7 +13,6 @@ from config import (
     LIGHT_GREEN, DARK_GREEN
 )
 
-
 class ExcelHandler:
     """Excel文件处理器"""
     
@@ -44,6 +43,28 @@ class ExcelHandler:
             print(f"从工作表 {sheet_name} 读取数据错误: {e}")
             return None
     
+    def save_data_to_sheet(self, data, sheet_name, mode='w'):
+        """
+        将数据保存到指定工作表
+        
+        Args:
+            data: 要保存的DataFrame数据
+            sheet_name: 目标工作表名称
+            mode: 写入模式，'w'为覆盖，'a'为追加（默认覆盖）
+        """
+        try:
+            if mode == 'a':
+                # 追加模式
+                with pd.ExcelWriter(self.file_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
+                    data.to_excel(writer, sheet_name=sheet_name, index=False)
+            else:
+                # 覆盖模式（默认）
+                with pd.ExcelWriter(self.file_path, engine="openpyxl") as writer:
+                    data.to_excel(writer, sheet_name=sheet_name, index=False)
+            print(f"数据已成功保存到工作表: {sheet_name}")
+        except Exception as e:
+            print(f"保存数据到工作表 {sheet_name} 错误: {e}")
+
     def append_data_to_sheet(self, data, target_sheet_name):
         """
         将数据追加到指定工作表

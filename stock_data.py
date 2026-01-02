@@ -18,7 +18,7 @@ class StockDataFetcher:
         ts.set_token(TUSHARE_TOKEN)
         self.pro = ts.pro_api()
     
-    def get_stock_date(self):
+    def get_stock_date(self, start=0, end=99):
         """
         获取交易日期范围
         返回: (start_date, end_date) 格式为 YYYYMMDD
@@ -35,12 +35,65 @@ class StockDataFetcher:
         
         latest_date = max(d for d in trade_dates if d <= current_date)
         idx = trade_dates.index(latest_date)
-        start_date = trade_dates[max(0, idx-99)]
+        
+        # 获取最近100个交易日的起始日期（含当日，共100天数据）
+        start_date = trade_dates[max(start, idx-end)]
 
         print(start_date)
         print(latest_date)
 
         return start_date, latest_date
+
+    def get_stock_history2(self, stock_code, start_date, end_date):
+        """
+        获取股票历史数据
+        
+        Args:
+            stock_code: 股票代码，格式如 'SH.600000'
+            start_date: 开始日期，格式 YYYYMMDD
+            end_date: 结束日期，格式 YYYYMMDD
+            
+        Returns:
+            DataFrame: 股票历史数据，包含日期、开高低收、成交量等信息
+        """
+        print(f"获取股票历史数据 {stock_code} {start_date} {end_date}")
+        
+        # 解析股票代码
+        items = str(stock_code).split('.')
+        code = items[1]
+        
+        # 确定交易所
+        exchange = ""
+        if code.startswith('6'):
+            exchange = 'SH'
+        elif code.startswith('0') or code.startswith('3'):
+            exchange = 'SZ'
+        elif code.startswith('88'):
+            exchange = 'BJ'
+        
+        new_stock_code = f"{code}.{exchange}"
+        
+        # 获取历史数据
+        history_df = self.pro.daily(
+            ts_code=new_stock_code, 
+            start_date=start_date, 
+            end_date=end_date
+        )
+        
+        if history_df is None or history_df.empty:
+            raise Exception((f"{code} 出现异常: {str(e)}"))
+
+        return history_df
+        # try:
+        #     history_df = history_df[['ts_code',"trade_date", "open", "high", "low", "close", "pct_chg", 'vol', 'amount']].sort_values("trade_date")
+        #     history_df["date"] = pd.to_datetime(history_df["trade_date"])
+
+        #     print(f"成功获取 {new_stock_code} 从 {start_date} 到 {end_date} 的历史数据")
+        #     return history_df
+            
+        # except Exception as e:
+        #     traceback.print_exc()
+        #     raise Exception(f"获取股票历史数据错误 {stock_code}: {e}")
 
     def get_stock_history(self, stock_code, start_date, end_date):
         """
