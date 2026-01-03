@@ -101,19 +101,22 @@ class StockDataManager:
         
         analysis_results = []
         for stock_name, stock_data in data.items():
-            if len(stock_data) < 60:  # 需要至少60天数据进行分析
+            plate = stock_data["plate"]
+            history = stock_data["history"]
+
+            if len(history) < 60:  # 需要至少60天数据进行分析
                 print(f"股票 {stock_name} 数据不足，跳过分析")
                 continue
 
-            # 转换为DataFrame
-            df = pd.DataFrame(stock_data)
+            # 转换为DataFrame（使用历史数据）
+            df = pd.DataFrame(history)
 
             if 'trade_date' in df.columns:
                 df['trade_date'] = pd.to_datetime(df['trade_date'])
                 df = df.sort_values('trade_date', ascending=True)
 
             # 进行技术分析
-            result = self.analyze_stock_status(df, stock_name)
+            result = self.analyze_stock_status(df, stock_name, plate)
             analysis_results.append(result)
 
         analysis_df = pd.DataFrame(analysis_results)
@@ -126,7 +129,7 @@ class StockDataManager:
         
         return analysis_df
     
-    def analyze_stock_status(self, df, symbol_name="未知股票"):
+    def analyze_stock_status(self, df, symbol_name="未知股票", plate="未知板块"):
         """
         优化后股票状态得分评价体系（不含量能维度）
         总分范围：0-100 分（分值越高，多头趋势越强）
@@ -143,6 +146,7 @@ class StockDataManager:
         # 检查数据是否足够（至少需要60个交易日数据）
         if len(df) < 60:
             return {
+                "板块": plate,
                 "股票名": symbol_name,
                 "得分": 0,
                 "状态": "【数据不足】",
@@ -171,13 +175,42 @@ class StockDataManager:
         lookback_period = min(180, len(df))
         high_180 = df['close'].tail(lookback_period).max()
         
+        # 完美新高或接近新高直接返回，不计算其他维度
         if abs(close - high_180) / high_180 <= 0.005:  # 完美新高（允许0.5%误差）
-            stage_high_score = 25
+            stage_high_score = 25  # 保持原始维度得分
             reasons.append("阶段新高：完美新高（180日）")
+            total_score = 100  # 完美新高给予最高分
+            status = "【极强多头】"
+            advice = "符合核心选股标准，可重点跟踪布局"
+            return {
+                "板块": plate,
+                "股票名": symbol_name,
+                "得分": total_score,
+                "状态": status,
+                "核心逻辑": " | ".join(reasons) if reasons else "暂无明确信号",
+                "操作建议": advice,
+                "阶段新高得分": stage_high_score,
+                "均线结构得分": 0,
+                "底部形态得分": 0
+            }
         elif close >= high_180 * 0.95:  # 接近新高（≥95%）
-            stage_high_score = 12
+            stage_high_score = 12  # 保持原始维度得分
             reasons.append("阶段新高：接近新高（180日）")
-        else:  # 普通状态
+            total_score = 80  # 接近新高给予次高分
+            status = "【极强多头】"
+            advice = "符合核心选股标准，可重点跟踪布局"
+            return {
+                "板块": plate,
+                "股票名": symbol_name,
+                "得分": total_score,
+                "状态": status,
+                "核心逻辑": " | ".join(reasons) if reasons else "暂无明确信号",
+                "操作建议": advice,
+                "阶段新高得分": stage_high_score,
+                "均线结构得分": 0,
+                "底部形态得分": 0
+            }
+        else:  # 普通状态，继续计算其他维度
             stage_high_score = 0
             reasons.append("阶段新高：普通状态")
         
@@ -352,6 +385,7 @@ class StockDataManager:
             advice = "趋势走弱，需规避风险"
         
         return {
+            "板块": plate,
             "股票名": symbol_name,
             "得分": total_score,
             "状态": status,
@@ -362,42 +396,6 @@ class StockDataManager:
             "底部形态得分": bottom_pattern_score
         }
 
-def test_stock_analysis():
-    """测试股票状态分析功能"""
-    import pandas as pd
-    import numpy as np
-    
-    # 创建模拟股票数据
-    dates = pd.date_range(start='2023-01-01', periods=200, freq='B')
-    
-    # 创建一个强势上涨的股票
-    close_prices = np.zeros(200)
-    close_prices[0] = 10
-    for i in range(1, 200):
-        # 模拟上涨趋势，带有随机波动
-        close_prices[i] = close_prices[i-1] * (1 + 0.003 + np.random.normal(0, 0.02))
-    
-    df = pd.DataFrame({
-        'date': dates,
-        'close': close_prices
-    })
-    
-    # 创建 StockDataManager 实例
-    manager = StockDataManager(file_path="DayDayHappy.xlsx")
-    
-    # 测试分析功能
-    result = manager.analyze_stock_status(df, symbol_name="测试股票")
-    
-    print("股票状态分析测试结果：")
-    print(f"股票名：{result['股票名']}")
-    print(f"得分：{result['得分']}")
-    print(f"状态：{result['状态']}")
-    print(f"核心逻辑：{result['核心逻辑']}")
-    print(f"操作建议：{result['操作建议']}")
-    print(f"阶段新高得分：{result['阶段新高得分']}")
-    print(f"均线结构得分：{result['均线结构得分']}")
-    print(f"底部形态得分：{result['底部形态得分']}")
-
 if __name__ == "__main__":
     # 创建 StockDataManager 实例
     manager = StockDataManager(file_path="DayDayHappy.xlsx")
@@ -407,8 +405,6 @@ if __name__ == "__main__":
         param = sys.argv[1]
         if param == "process":
             manager.process_stock_data_to_json(sheet_name="pool")
-        elif param == "test":
-            test_stock_analysis()
         else:
             print("参数错误，支持：process（处理数据）或 test（测试分析功能）")
     else:
