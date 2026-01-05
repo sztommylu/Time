@@ -1,0 +1,34 @@
+2026-01-04 22:47:15,182 - strack - INFO - 初始化strack应用
+2026-01-04 22:47:15,183 - strack - INFO - 开始执行主函数
+2026-01-04 22:47:15,188 - strack - INFO - 开始处理股票数据...
+2026-01-04 22:47:15,188 - strack - ERROR - 执行出错: name 'json' is not defined
+Traceback (most recent call last):
+  File "D:\up\strack.py", line 73, in main
+    processor.process_stock_data(current_sheet_name=current_sheet_name, target_sheet_name=target_sheet_name)
+  File "D:\up\stock_processor.py", line 137, in process_stock_data
+    data = json.load(f)
+           ^^^^
+NameError: name 'json' is not defined. Did you forget to import 'json'
+2026-01-04 22:47:27,446 - strack - INFO - 初始化strack应用
+2026-01-04 22:47:27,446 - strack - INFO - 开始执行主函数
+2026-01-04 22:47:27,461 - strack - INFO - 开始处理股票数据...
+2026-01-04 22:47:33,903 - strack - ERROR - 执行出错: name 'source_data' is not defined
+Traceback (most recent call last):
+  File "D:\up\strack.py", line 73, in main
+    processor.process_stock_data(current_sheet_name=current_sheet_name, target_sheet_name=target_sheet_name)
+  File "D:\up\stock_processor.py", line 188, in process_stock_data
+    print(f"数据处理完成，共处理 {len(source_data)} 只股票")
+                                      ^^^^^^^^^^^
+NameError: name 'source_data' is not defined. Did you mean: 'stock_data'?
+2026-01-04 22:50:16,849 - strack - INFO - 初始化strack应用
+2026-01-04 22:50:16,849 - strack - INFO - 开始执行主函数
+2026-01-04 22:50:16,854 - strack - INFO - 开始处理股票数据...
+2026-01-04 22:50:24,808 - strack - INFO - 开始格式化工作表...
+2026-01-04 22:50:25,904 - strack - INFO - 开始高亮核心股票...
+2026-01-04 22:50:25,969 - strack - INFO - 股票数据处理完成！
+2026-01-04 22:51:32,276 - strack - INFO - 初始化strack应用
+2026-01-04 22:51:32,277 - strack - INFO - 开始执行主函数
+2026-01-04 22:51:32,280 - strack - INFO - 开始处理股票数据...
+2026-01-04 22:51:41,164 - strack - INFO - 开始格式化工作表...
+2026-01-04 22:51:42,487 - strack - INFO - 开始高亮核心股票...
+2026-01-04 22:51:42,568 - strack - INFO - 股票数据处理完成！

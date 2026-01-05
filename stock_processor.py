@@ -12,6 +12,8 @@ from excel_handler import ExcelHandler
 from config import API_LIMIT_COUNT, API_SLEEP_TIME
 import support_buy_scanner
 import check_ma_converge
+import pandas as pd
+import json
 
 class StockDataProcessor:
     """股票数据处理器 - 整合所有功能的主处理类"""
@@ -132,55 +134,24 @@ class StockDataProcessor:
             current_sheet_name: 源工作表名称
             target_sheet_name: 目标工作表名称
         """
-        # 读取源 Sheet 数据
-        source_data = self.read_data_from_sheet(current_sheet_name)
-        if source_data is None:
-            print("无法读取源数据，处理中止")
-            return
-        
-        # 使用 defaultdict 存储合并后的数据
-        merged_data = defaultdict(list)
+        with open('stocks_data.json', 'r', encoding='utf-8') as f:
+            data = json.load(f)
         
         try:
-            start_date, current_date = self.get_stock_date()
-            print(f"交易日期范围: {start_date} 到 {current_date}")
-            
-            count = 0
-            
-            for index, row in source_data.iterrows():
-                # API调用频率控制
-                if count >= API_LIMIT_COUNT:
-                    print(f"已处理 {count} 只股票，等待 {API_SLEEP_TIME} 秒...")
-                    time.sleep(API_SLEEP_TIME)
-                    count = 0
-                
-                count += 1
-                print(f"============================{count}============================")
-                
-                # 获取股票基本信息
-                stock_code = row["代码"]   
-                stock_name = row["名称"]   
-                stock_plate = row["板块"]  
-                
-                print(f"处理股票: {stock_code} - {stock_name} ({stock_plate})")
-                
-                # 获取股票历史数据
-                try:
-                    history_df = self.get_stock_history(stock_code, start_date, current_date)
-                except Exception as e:
-                    print(e)
-                    continue
+            merged_data = defaultdict(list)
 
-                if len(history_df) < 20:
-                    print(f"{stock_name} {stock_code} 不足20个数据")
-                    continue
+            for stock_name, stock_data in data.items():
+                plate = stock_data["plate"]
+                history = stock_data["history"]
 
-                # 添加股票基本信息（即使没有历史数据也要添加）
-                merged_data["代码"].append(stock_code)
-                merged_data["名称"].append(stock_name)
-                merged_data["板块"].append(stock_plate)
+                #merged_data["代码"].append(stock_code)
+                merged_data["板块"].append(plate)
+                merged_data["名称"].append(stock_name)# 仅保留最近30天数据
+                history_df = pd.DataFrame(history).head(30)
+                # 获取股票代码（假设history_df的第一行包含代码信息）
+                code = history_df.iloc[0].get('ts_code', '')
+                merged_data["代码"].append(code)
                 
-                # 调用 support_buy_scanner 计算趋势
                 trend = self._calculate_trend_signal(history_df)
                 # 计算均线粘合
                 ma_status = check_ma_converge.check_ma_converge(history_df)
@@ -215,14 +186,11 @@ class StockDataProcessor:
                         merged_data[key].extend([np.nan] * (max_len - len(merged_data[key])))
 
             if merged_data:
-                import pandas as pd
                 result_df = pd.DataFrame(merged_data)
-
                 self.append_data_to_sheet(result_df, target_sheet_name)
-                print(f"数据处理完成，共处理 {len(source_data)} 只股票")
+                print(f"数据处理完成，共处理 {len(result_df)} 只股票")
             else:
                 print("没有数据需要写入")
-                
         except Exception as e:
             print(f"处理股票数据错误: {e}")
             traceback.print_exc()
